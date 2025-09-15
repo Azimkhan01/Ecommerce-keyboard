@@ -1,0 +1,69 @@
+generator client {
+  provider      = "prisma-client-js"
+  // output   = "../generated/prisma"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+  COMPLETED
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(50)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  product   Product[]
+
+  @@map("category")
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique @db.VarChar(50)
+  description String?
+  price       Decimal     @db.Decimal(10, 2)
+  currency    String      @default("INR") @db.VarChar(3)
+  quantity    Int         @default(0)
+  active      Boolean     @default(true)
+  categoryId  Int         @map("category_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+
+  @@map("product")
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  userId      String   @db.VarChar(25)
+  status       OrderStatus  @default(PENDING)
+  totalAmount Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // relation
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int     @default(1)
+  price     Decimal @db.Decimal(10, 2) // copy product price at order time
+
+  // relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}

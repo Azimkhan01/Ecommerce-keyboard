@@ -1,0 +1,8 @@
+FROM node:23
+WORKDIR /app
+COPY package*.json ./
+COPY . .
+COPY .env .env
+RUN npm install
+EXPOSE 3003
+CMD [ "node" , "index.js" ]
